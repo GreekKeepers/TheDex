@@ -30,7 +30,7 @@ impl TheDex {
         &self,
         request: models::Request,
         path: &'static str,
-        nonce: &str,
+        nonce: u64,
     ) -> Result<models::Response, errors::Error> {
         let raw_request = serde_json::to_value(&request).expect("Serialization to value failed");
         let mut hashmap_serialized: HashMap<String, serde_json::Value> =
@@ -42,7 +42,7 @@ impl TheDex {
         );
         hashmap_serialized.insert(
             String::from("nonce"),
-            serde_json::Value::String(String::from(nonce)),
+            serde_json::Value::Number(nonce.into()),
         );
 
         let serialized_request = serde_json::to_string(&hashmap_serialized).unwrap();
@@ -87,7 +87,7 @@ impl TheDex {
     pub async fn create_invoice(
         &self,
         request: models::CreateInvoice,
-        nonce: &str,
+        nonce: u64,
     ) -> Result<models::Response, errors::Error> {
         self.make_signed_request(
             models::Request::CreateInvoice(request),
