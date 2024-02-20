@@ -12,6 +12,7 @@ type HmacSha512 = Hmac<Sha512>;
 
 const BASE_URL: &str = "https://thedex.cloud";
 
+#[derive(Clone)]
 pub struct TheDex {
     api_key: String,
     api_secret: String,

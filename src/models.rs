@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_repr::*;
@@ -52,10 +53,10 @@ pub struct InvoiceCreateResponse {
     pub invoice_id: Option<String>,
     pub merchant_id: String,
     pub client_id: Option<String>,
-    #[serde(with = "date_format")]
     pub order_id: Option<String>,
     #[serde(with = "date_format")]
     pub create_date: DateTime<Utc>,
+    #[serde(with = "date_format")]
     pub modified_date: DateTime<Utc>,
     pub status: InvoiceStatus,
     pub pay_url: String,
