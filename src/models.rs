@@ -33,6 +33,7 @@ pub struct CreateInvoice {
 pub enum Response {
     Invoice(Invoice),
     InvoiceCreateResponse(InvoiceCreateResponse),
+    Prices(Vec<Price>),
 }
 
 #[derive(Serialize_repr, Deserialize_repr, Debug, Clone)]
@@ -105,6 +106,23 @@ pub struct Invoice {
     pub failure_url: Option<String>,
     pub success_url: Option<String>,
     pub merchant_site_url: String,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Price {
+    /// Ex: `BTC_BITCOIN`
+    pub monetary: String,
+
+    pub rates: Vec<Rate>,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Rate {
+    pub fiat_currency: String,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub rate: Decimal,
 }
 
 pub mod date_format {

@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use hmac::{Hmac, Mac};
 use reqwest::Client;
+use serde_json::Value;
 use sha2::Sha512;
 
 type HmacSha512 = Hmac<Sha512>;
@@ -28,11 +29,15 @@ impl TheDex {
 
     async fn make_signed_request(
         &self,
-        request: models::Request,
+        request: Option<models::Request>,
         path: &'static str,
         nonce: u64,
     ) -> Result<models::Response, errors::Error> {
-        let raw_request = serde_json::to_value(&request).expect("Serialization to value failed");
+        let raw_request = if let Some(req) = request {
+            serde_json::to_value(&req).expect("Serialization to value failed")
+        } else {
+            Value::String("".into())
+        };
         let mut hashmap_serialized: HashMap<String, serde_json::Value> =
             serde_json::from_value(raw_request).unwrap();
 
@@ -91,12 +96,23 @@ impl TheDex {
     ) -> Result<models::InvoiceCreateResponse, errors::Error> {
         let response = self
             .make_signed_request(
-                models::Request::CreateInvoice(request),
+                Some(models::Request::CreateInvoice(request)),
                 "/api/v1/invoices/create",
                 nonce,
             )
             .await?;
         if let models::Response::InvoiceCreateResponse(response) = response {
+            Ok(response)
+        } else {
+            Err(errors::Error::UnexpectedResponse(response))
+        }
+    }
+
+    pub async fn prices(&self, nonce: u64) -> Result<Vec<models::Price>, errors::Error> {
+        let response = self
+            .make_signed_request(None, "/api/v1/info/user/currencies/crypto", nonce)
+            .await?;
+        if let models::Response::Prices(response) = response {
             Ok(response)
         } else {
             Err(errors::Error::UnexpectedResponse(response))
