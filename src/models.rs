@@ -144,7 +144,7 @@ pub mod date_format {
     use chrono::{DateTime, NaiveDateTime, Utc};
     use serde::{self, Deserialize, Deserializer, Serializer};
 
-    const FORMAT: &'static str = "%Y-%m-%d %H:%M:%S";
+    const FORMAT: &'static str = "%Y-%m-%d %H:%M:%S%.3f";
 
     // The signature of a serialize_with function must follow the pattern:
     //
