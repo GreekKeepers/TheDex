@@ -1,13 +1,15 @@
 pub mod errors;
 pub mod models;
 
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use base64::{engine::general_purpose::STANDARD, Engine as _};
+use chrono::prelude::*;
 use hmac::{Hmac, Mac};
 use reqwest::Client;
 use serde_json::Value;
 use sha2::Sha512;
+use tokio::sync::RwLock;
 
 type HmacSha512 = Hmac<Sha512>;
 
@@ -17,13 +19,17 @@ const BASE_URL: &str = "https://thedex.cloud";
 pub struct TheDex {
     api_key: String,
     api_secret: String,
+    last_requested: Arc<RwLock<u64>>,
+    prices: Arc<Vec<models::Price>>,
 }
 
 impl TheDex {
-    pub fn new(api_key: String, api_secret: String) -> Self {
+    pub async fn new(api_key: String, api_secret: String) -> Self {
         Self {
             api_secret,
             api_key,
+            prices: Arc::new(Vec::with_capacity(0)),
+            last_requested: Default::default(),
         }
     }
 
@@ -108,12 +114,19 @@ impl TheDex {
         }
     }
 
-    pub async fn prices(&self, nonce: u64) -> Result<Vec<models::Price>, errors::Error> {
+    pub async fn prices(&mut self, nonce: u64) -> Result<&Vec<models::Price>, errors::Error> {
+        if chrono::Utc::now().timestamp_millis() as u64 - *self.last_requested.read().await < 60000
+        {
+            return Ok(&self.prices);
+        }
         let response = self
             .make_signed_request(None, "/api/v1/info/user/currencies/crypto", nonce)
             .await?;
         if let models::Response::Prices(response) = response {
-            Ok(response)
+            let mut locked = self.last_requested.write().await;
+            *locked = chrono::Utc::now().timestamp_millis() as u64;
+            self.prices = Arc::new(response);
+            Ok(&self.prices)
         } else {
             Err(errors::Error::UnexpectedResponse(response))
         }
