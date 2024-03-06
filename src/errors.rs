@@ -9,8 +9,8 @@ pub enum Error {
     #[error("Error making request: {0}")]
     RequestError(ReqwestError),
 
-    #[error("Error deserializing response: {0}")]
-    SerdeError(SerdeError),
+    #[error("Error deserializing response: {0}. Response `{1}`")]
+    SerdeError(SerdeError, String),
 
     #[error("Unexpected response: {0:?}")]
     UnexpectedResponse(models::Response),

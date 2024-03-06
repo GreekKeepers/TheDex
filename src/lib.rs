@@ -79,7 +79,7 @@ impl TheDex {
             .map_err(errors::Error::RequestError)?;
 
         let deserialized_res: models::Response =
-            serde_json::from_str(&res).map_err(errors::Error::SerdeError)?;
+            serde_json::from_str(&res).map_err(|err| errors::Error::SerdeError(err, res))?;
 
         Ok(deserialized_res)
     }
