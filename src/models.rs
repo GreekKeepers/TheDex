@@ -35,7 +35,7 @@ pub enum Response {
     InvoiceCreateResponse(InvoiceCreateResponse),
 }
 
-#[derive(Serialize_repr, Deserialize_repr, Debug)]
+#[derive(Serialize_repr, Deserialize_repr, Debug, Clone)]
 #[repr(u8)]
 pub enum InvoiceStatus {
     Waiting = 0,
