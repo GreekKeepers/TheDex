@@ -6,15 +6,15 @@ use serde_repr::*;
 #[derive(Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum Request {
-    CreateInvoice(CreateInvoice),
+    CreateQuickInvoice(CreateQuickInvoice),
 }
 
 #[derive(Deserialize, Serialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct CreateInvoice {
+pub struct CreateQuickInvoice {
     #[serde(with = "rust_decimal::serde::str")]
     pub amount: Decimal,
-    pub currency: String,
+    pub pay_currency: String,
     pub merchant_id: String,
     pub order_id: Option<String>,
     pub email: Option<String>,
@@ -32,7 +32,7 @@ pub struct CreateInvoice {
 #[serde(untagged)]
 pub enum Response {
     Invoice(Invoice),
-    InvoiceCreateResponse(InvoiceCreateResponse),
+    InvoiceCreateQuickResponse(InvoiceCreateQuickResponse),
     Prices(Vec<Price>),
     Currencies(Currencies),
 }
@@ -51,7 +51,7 @@ pub enum InvoiceStatus {
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct InvoiceCreateResponse {
+pub struct InvoiceCreateQuickResponse {
     pub invoice_id: Option<String>,
     pub merchant_id: String,
     pub client_id: Option<String>,
@@ -62,6 +62,10 @@ pub struct InvoiceCreateResponse {
     pub modified_date: DateTime<Utc>,
     pub status: InvoiceStatus,
     pub pay_url: String,
+    pub purse: String,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub amount_in_pay_currency: Decimal,
+    pub pay_currency: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]

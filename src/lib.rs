@@ -6,7 +6,6 @@ use std::{collections::HashMap, sync::Arc};
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use hmac::{Hmac, Mac};
 use reqwest::Client;
-use serde_json::Value;
 use sha2::Sha512;
 use tokio::sync::RwLock;
 
@@ -40,13 +39,15 @@ impl TheDex {
         path: &'static str,
         nonce: u64,
     ) -> Result<models::Response, errors::Error> {
-        let raw_request = if let Some(req) = request {
-            serde_json::to_value(&req).expect("Serialization to value failed")
+        let mut hashmap_serialized: HashMap<String, serde_json::Value> = if let Some(req) = request
+        {
+            serde_json::from_value(
+                serde_json::to_value(&req).expect("Serialization to value failed"),
+            )
+            .unwrap()
         } else {
-            Value::String("".into())
+            Default::default()
         };
-        let mut hashmap_serialized: HashMap<String, serde_json::Value> =
-            serde_json::from_value(raw_request).unwrap();
 
         hashmap_serialized.insert(
             String::from("request"),
@@ -96,19 +97,19 @@ impl TheDex {
         Ok(deserialized_res)
     }
 
-    pub async fn create_invoice(
+    pub async fn create_quick_invoice(
         &self,
-        request: models::CreateInvoice,
+        request: models::CreateQuickInvoice,
         nonce: u64,
-    ) -> Result<models::InvoiceCreateResponse, errors::Error> {
+    ) -> Result<models::InvoiceCreateQuickResponse, errors::Error> {
         let response = self
             .make_signed_request(
-                Some(models::Request::CreateInvoice(request)),
-                "/api/v1/invoices/create",
+                Some(models::Request::CreateQuickInvoice(request)),
+                "/api/v1/invoices/create/quick",
                 nonce,
             )
             .await?;
-        if let models::Response::InvoiceCreateResponse(response) = response {
+        if let models::Response::InvoiceCreateQuickResponse(response) = response {
             Ok(response)
         } else {
             Err(errors::Error::UnexpectedResponse(response))

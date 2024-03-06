@@ -5,7 +5,7 @@ use thedex::models;
 
 #[test]
 pub fn add_fields_to_requests() {
-    let request = models::Request::CreateInvoice(Default::default());
+    let request = models::Request::CreateQuickInvoice(Default::default());
     let raw_request = serde_json::to_value(&request).expect("Serialization to value failed");
 
     let mut hashmap_serialized: HashMap<String, serde_json::Value> =
