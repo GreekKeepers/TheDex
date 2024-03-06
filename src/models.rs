@@ -108,7 +108,7 @@ pub struct Invoice {
     pub merchant_site_url: String,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Price {
     /// Ex: `BTC_BITCOIN`
@@ -117,7 +117,7 @@ pub struct Price {
     pub rates: Vec<Rate>,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Rate {
     pub fiat_currency: String,
