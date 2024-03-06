@@ -34,6 +34,7 @@ pub enum Response {
     Invoice(Invoice),
     InvoiceCreateResponse(InvoiceCreateResponse),
     Prices(Vec<Price>),
+    Currencies(Currencies),
 }
 
 #[derive(Serialize_repr, Deserialize_repr, Debug, Clone)]
@@ -106,6 +107,20 @@ pub struct Invoice {
     pub failure_url: Option<String>,
     pub success_url: Option<String>,
     pub merchant_site_url: String,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Currencies {
+    pub invoice: Vec<Currency>,
+    pub payout: Vec<Currency>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Currency {
+    id: u64,
+    name: String,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]

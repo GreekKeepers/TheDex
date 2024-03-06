@@ -20,6 +20,7 @@ pub struct TheDex {
     api_secret: String,
     last_requested: Arc<RwLock<u64>>,
     prices: Arc<Vec<models::Price>>,
+    currencies: Arc<RwLock<Option<models::Currencies>>>,
 }
 
 impl TheDex {
@@ -29,6 +30,7 @@ impl TheDex {
             api_key,
             prices: Arc::new(Vec::with_capacity(0)),
             last_requested: Default::default(),
+            currencies: Default::default(),
         }
     }
 
@@ -126,6 +128,23 @@ impl TheDex {
             *locked = chrono::Utc::now().timestamp_millis() as u64;
             self.prices = Arc::new(response);
             Ok(&self.prices)
+        } else {
+            Err(errors::Error::UnexpectedResponse(response))
+        }
+    }
+
+    pub async fn currencies(&mut self, nonce: u64) -> Result<models::Currencies, errors::Error> {
+        if let Some(cur) = self.currencies.read().await.as_ref() {
+            return Ok(cur.clone());
+        }
+        let response = self
+            .make_signed_request(None, "/api/v1/info/currencies", nonce)
+            .await?;
+
+        if let models::Response::Currencies(response) = response {
+            let mut locked = self.currencies.write().await;
+            locked.replace(response.clone());
+            Ok(response)
         } else {
             Err(errors::Error::UnexpectedResponse(response))
         }
