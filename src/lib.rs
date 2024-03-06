@@ -88,12 +88,18 @@ impl TheDex {
         &self,
         request: models::CreateInvoice,
         nonce: u64,
-    ) -> Result<models::Response, errors::Error> {
-        self.make_signed_request(
-            models::Request::CreateInvoice(request),
-            "/api/v1/invoices/create",
-            nonce,
-        )
-        .await
+    ) -> Result<models::InvoiceCreateResponse, errors::Error> {
+        let response = self
+            .make_signed_request(
+                models::Request::CreateInvoice(request),
+                "/api/v1/invoices/create",
+                nonce,
+            )
+            .await?;
+        if let models::Response::InvoiceCreateResponse(response) = response {
+            Ok(response)
+        } else {
+            Err(errors::Error::UnexpectedResponse(response))
+        }
     }
 }

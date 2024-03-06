@@ -28,14 +28,14 @@ pub struct CreateInvoice {
     pub callback_url: Option<String>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Debug)]
 #[serde(untagged)]
 pub enum Response {
     Invoice(Invoice),
     InvoiceCreateResponse(InvoiceCreateResponse),
 }
 
-#[derive(Serialize_repr, Deserialize_repr)]
+#[derive(Serialize_repr, Deserialize_repr, Debug)]
 #[repr(u8)]
 pub enum InvoiceStatus {
     Waiting = 0,
@@ -47,7 +47,7 @@ pub enum InvoiceStatus {
     WaitingEmailConfirmation,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct InvoiceCreateResponse {
     pub invoice_id: Option<String>,
@@ -62,7 +62,7 @@ pub struct InvoiceCreateResponse {
     pub pay_url: String,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Invoice {
     pub invoice_id: Option<String>,
