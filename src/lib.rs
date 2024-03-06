@@ -4,7 +4,6 @@ pub mod models;
 use std::{collections::HashMap, sync::Arc};
 
 use base64::{engine::general_purpose::STANDARD, Engine as _};
-use chrono::prelude::*;
 use hmac::{Hmac, Mac};
 use reqwest::Client;
 use serde_json::Value;
