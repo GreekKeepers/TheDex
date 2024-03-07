@@ -19,7 +19,7 @@ pub struct TheDex {
     api_key: String,
     api_secret: String,
     last_requested: Arc<RwLock<u64>>,
-    prices: Arc<RwLock<Vec<models::Price>>>,
+    prices: Arc<Vec<models::Price>>,
     currencies: Arc<RwLock<Option<models::Currencies>>>,
 }
 
@@ -28,7 +28,7 @@ impl TheDex {
         Self {
             api_secret,
             api_key,
-            prices: Arc::new(RwLock::new(Vec::with_capacity(0))),
+            prices: Arc::new(Vec::with_capacity(0)),
             last_requested: Default::default(),
             currencies: Default::default(),
         }
@@ -117,10 +117,7 @@ impl TheDex {
         }
     }
 
-    pub async fn prices(
-        &mut self,
-        nonce: u64,
-    ) -> Result<Arc<tokio::sync::RwLock<Vec<Price>>>, errors::Error> {
+    pub async fn prices(&mut self, nonce: u64) -> Result<Arc<Vec<Price>>, errors::Error> {
         if chrono::Utc::now().timestamp_millis() as u64 - *self.last_requested.read().await < 60000
         {
             return Ok(self.prices.clone());
@@ -131,7 +128,7 @@ impl TheDex {
         if let Ok(response) = serde_json::from_str::<Vec<Price>>(&response) {
             let mut locked = self.last_requested.write().await;
             *locked = chrono::Utc::now().timestamp_millis() as u64;
-            self.prices = Arc::new(RwLock::new(response));
+            self.prices = Arc::new(response);
             Ok(self.prices.clone())
         } else {
             Err(errors::Error::UnexpectedResponse(response))
