@@ -1,4 +1,3 @@
-use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_repr::*;
@@ -28,15 +27,6 @@ pub struct CreateQuickInvoice {
     pub callback_url: Option<String>,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
-#[serde(untagged)]
-pub enum Response {
-    Invoice(Invoice),
-    InvoiceCreateQuickResponse(InvoiceCreateQuickResponse),
-    Prices(Vec<Price>),
-    Currencies(Currencies),
-}
-
 #[derive(Serialize_repr, Deserialize_repr, Debug, Clone)]
 #[repr(u8)]
 pub enum InvoiceStatus {
@@ -56,10 +46,8 @@ pub struct InvoiceCreateQuickResponse {
     pub merchant_id: String,
     pub client_id: Option<String>,
     pub order_id: Option<String>,
-    #[serde(with = "date_format")]
-    pub create_date: DateTime<Utc>,
-    #[serde(with = "date_format")]
-    pub modified_date: DateTime<Utc>,
+    pub create_date: String,
+    pub modified_date: String,
     pub status: InvoiceStatus,
     pub pay_url: String,
     pub purse: String,
@@ -77,12 +65,9 @@ pub struct Invoice {
     pub client_id: Option<String>,
     pub status: InvoiceStatus,
     pub status_name: String,
-    #[serde(with = "date_format")]
-    pub create_date: DateTime<Utc>,
-    #[serde(with = "date_format")]
-    pub modified_date: DateTime<Utc>,
-    #[serde(with = "date_format")]
-    pub expiration_date: DateTime<Utc>,
+    pub create_date: String,
+    pub modified_date: String,
+    pub expiration_date: String,
     pub expiration_date_in_milliseconds: u64,
     pub purse: String,
     pub currency: String,
@@ -116,24 +101,26 @@ pub struct Invoice {
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Currencies {
-    pub invoice: Vec<Currency>,
-    pub payout: Vec<Currency>,
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct Currency {
-    id: u64,
-    name: String,
+    pub fiat_currencies: Vec<String>,
+    pub pay_currencies: Vec<String>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Price {
     /// Ex: `BTC_BITCOIN`
-    pub monetary: String,
+    #[serde(with = "symbol")]
+    pub monetary: Symbol,
 
     pub rates: Vec<Rate>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Symbol {
+    /// Ex: `BTC_BITCOIN`
+    pub short: String,
+
+    pub full: String,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -148,7 +135,7 @@ pub mod date_format {
     use chrono::{DateTime, NaiveDateTime, Utc};
     use serde::{self, Deserialize, Deserializer, Serializer};
 
-    const FORMAT: &'static str = "%Y-%m-%d %H:%M:%S%.3f";
+    const FORMAT: &str = "%Y-%m-%d %H:%M:%S%.3f";
 
     // The signature of a serialize_with function must follow the pattern:
     //
@@ -179,5 +166,39 @@ pub mod date_format {
         let s = String::deserialize(deserializer)?;
         let dt = NaiveDateTime::parse_from_str(&s, FORMAT).map_err(serde::de::Error::custom)?;
         Ok(DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc))
+    }
+}
+
+pub mod symbol {
+    use super::Symbol;
+    use serde::{self, Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S>(symbol: &Symbol, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let s = format!("{}_{}", symbol.short, symbol.full);
+        serializer.serialize_str(&s)
+    }
+
+    // The signature of a deserialize_with function must follow the pattern:
+    //
+    //    fn deserialize<'de, D>(D) -> Result<T, D::Error>
+    //    where
+    //        D: Deserializer<'de>
+    //
+    // although it may also be generic over the output types T.
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Symbol, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let mut parts = s.split('_');
+        let short = parts.next().unwrap();
+        let full = if let Some(p) = parts.next() { p } else { short };
+        Ok(Symbol {
+            short: short.into(),
+            full: full.into(),
+        })
     }
 }

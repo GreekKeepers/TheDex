@@ -11,7 +11,7 @@ use tokio::sync::RwLock;
 
 type HmacSha512 = Hmac<Sha512>;
 
-const BASE_URL: &str = "https://thedex.cloud";
+const BASE_URL: &str = "https://app.thedex.cloud";
 
 #[derive(Clone)]
 pub struct TheDex {
@@ -38,7 +38,7 @@ impl TheDex {
         request: Option<models::Request>,
         path: &'static str,
         nonce: u64,
-    ) -> Result<models::Response, errors::Error> {
+    ) -> Result<String, errors::Error> {
         let mut hashmap_serialized: HashMap<String, serde_json::Value> = if let Some(req) = request
         {
             serde_json::from_value(
@@ -55,7 +55,7 @@ impl TheDex {
         );
         hashmap_serialized.insert(
             String::from("nonce"),
-            serde_json::Value::Number(nonce.into()),
+            serde_json::Value::String(nonce.to_string()),
         );
 
         let serialized_request = serde_json::to_string(&hashmap_serialized).unwrap();
@@ -91,10 +91,10 @@ impl TheDex {
             .await
             .map_err(errors::Error::RequestError)?;
 
-        let deserialized_res: models::Response =
-            serde_json::from_str(&res).map_err(|err| errors::Error::SerdeError(err, res))?;
+        // let deserialized_res: Value =
+        //     serde_json::from_str(&res).map_err(|err| errors::Error::SerdeError(err, res))?;
 
-        Ok(deserialized_res)
+        Ok(res)
     }
 
     pub async fn create_quick_invoice(
@@ -109,7 +109,7 @@ impl TheDex {
                 nonce,
             )
             .await?;
-        if let models::Response::InvoiceCreateQuickResponse(response) = response {
+        if let Ok(response) = serde_json::from_str(&response) {
             Ok(response)
         } else {
             Err(errors::Error::UnexpectedResponse(response))
@@ -124,7 +124,7 @@ impl TheDex {
         let response = self
             .make_signed_request(None, "/api/v1/info/user/currencies/crypto", nonce)
             .await?;
-        if let models::Response::Prices(response) = response {
+        if let Ok(response) = serde_json::from_str(&response) {
             let mut locked = self.last_requested.write().await;
             *locked = chrono::Utc::now().timestamp_millis() as u64;
             self.prices = Arc::new(response);
@@ -142,7 +142,7 @@ impl TheDex {
             .make_signed_request(None, "/api/v1/info/currencies", nonce)
             .await?;
 
-        if let models::Response::Currencies(response) = response {
+        if let Ok(response) = serde_json::from_str::<models::Currencies>(&response) {
             let mut locked = self.currencies.write().await;
             locked.replace(response.clone());
             Ok(response)

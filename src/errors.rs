@@ -2,8 +2,6 @@ use reqwest::Error as ReqwestError;
 use serde_json::Error as SerdeError;
 use thiserror::Error;
 
-use crate::models;
-
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("Error making request: {0}")]
@@ -13,5 +11,5 @@ pub enum Error {
     SerdeError(SerdeError, String),
 
     #[error("Unexpected response: {0:?}")]
-    UnexpectedResponse(models::Response),
+    UnexpectedResponse(String),
 }
