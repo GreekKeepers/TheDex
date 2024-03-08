@@ -19,7 +19,7 @@ pub struct TheDex {
     api_key: String,
     api_secret: String,
     last_requested: Arc<RwLock<u64>>,
-    prices: Arc<Vec<models::Price>>,
+    prices: Vec<models::Price>,
     currencies: Arc<RwLock<Option<models::Currencies>>>,
 }
 
@@ -28,7 +28,7 @@ impl TheDex {
         Self {
             api_secret,
             api_key,
-            prices: Arc::new(Vec::with_capacity(0)),
+            prices: Vec::with_capacity(0),
             last_requested: Default::default(),
             currencies: Default::default(),
         }
@@ -117,9 +117,8 @@ impl TheDex {
         }
     }
 
-    pub async fn prices(&mut self, nonce: u64) -> Result<Arc<Vec<Price>>, errors::Error> {
-        if chrono::Utc::now().timestamp_millis() as u64 - *self.last_requested.read().await < 60000
-        {
+    pub async fn prices(&mut self, nonce: u64) -> Result<Vec<Price>, errors::Error> {
+        if chrono::Utc::now().timestamp_millis() as u64 - *self.last_requested.read().await < 1 {
             return Ok(self.prices.clone());
         }
         let response = self
@@ -128,7 +127,7 @@ impl TheDex {
         if let Ok(response) = serde_json::from_str::<Vec<Price>>(&response) {
             let mut locked = self.last_requested.write().await;
             *locked = chrono::Utc::now().timestamp_millis() as u64;
-            self.prices = Arc::new(response);
+            self.prices = response;
             Ok(self.prices.clone())
         } else {
             Err(errors::Error::UnexpectedResponse(response))
@@ -146,6 +145,34 @@ impl TheDex {
         if let Ok(response) = serde_json::from_str::<models::Currencies>(&response) {
             let mut locked = self.currencies.write().await;
             locked.replace(response.clone());
+            Ok(response)
+        } else {
+            Err(errors::Error::UnexpectedResponse(response))
+        }
+    }
+
+    pub async fn crypto_limits(
+        &mut self,
+        nonce: u64,
+    ) -> Result<Vec<models::CryptoLimit>, errors::Error> {
+        let response = self
+            .make_signed_request(None, "/api/v1/info/invoice/limit/crypto", nonce)
+            .await?;
+        if let Ok(response) = serde_json::from_str(&response) {
+            Ok(response)
+        } else {
+            Err(errors::Error::UnexpectedResponse(response))
+        }
+    }
+
+    pub async fn fiat_limits(
+        &mut self,
+        nonce: u64,
+    ) -> Result<Vec<models::FiatLimit>, errors::Error> {
+        let response = self
+            .make_signed_request(None, "/api/v1/info/invoice/limit/fiat", nonce)
+            .await?;
+        if let Ok(response) = serde_json::from_str(&response) {
             Ok(response)
         } else {
             Err(errors::Error::UnexpectedResponse(response))

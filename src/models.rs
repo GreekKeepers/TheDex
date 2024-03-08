@@ -25,6 +25,7 @@ pub struct CreateQuickInvoice {
     pub success_url: Option<String>,
     pub failure_url: Option<String>,
     pub callback_url: Option<String>,
+    pub unfix_amount: Option<bool>,
 }
 
 #[derive(Serialize_repr, Deserialize_repr, Debug, Clone)]
@@ -103,6 +104,24 @@ pub struct Invoice {
 pub struct Currencies {
     pub fiat_currencies: Vec<String>,
     pub pay_currencies: Vec<String>,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct CryptoLimit {
+    #[serde(with = "symbol")]
+    pub monetary: Symbol,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub minimal_limit: Decimal,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct FiatLimit {
+    #[serde(with = "symbol")]
+    pub fiat_currency: Symbol,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub minimal_limit: Decimal,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
