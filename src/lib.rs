@@ -1,7 +1,7 @@
 pub mod errors;
 pub mod models;
 
-use std::{collections::HashMap, rc::Rc, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use hmac::{Hmac, Mac};
@@ -19,7 +19,7 @@ pub struct TheDex {
     api_key: String,
     api_secret: String,
     last_requested: Arc<RwLock<u64>>,
-    prices: Rc<Vec<models::Price>>,
+    prices: Vec<models::Price>,
     currencies: Arc<RwLock<Option<models::Currencies>>>,
 }
 
@@ -28,7 +28,7 @@ impl TheDex {
         Self {
             api_secret,
             api_key,
-            prices: Rc::new(Vec::with_capacity(0)),
+            prices: Vec::with_capacity(0),
             last_requested: Default::default(),
             currencies: Default::default(),
         }
@@ -117,7 +117,7 @@ impl TheDex {
         }
     }
 
-    pub async fn prices(&mut self, nonce: u64) -> Result<Rc<Vec<Price>>, errors::Error> {
+    pub async fn prices(&mut self, nonce: u64) -> Result<Vec<Price>, errors::Error> {
         if chrono::Utc::now().timestamp_millis() as u64 - *self.last_requested.read().await < 60000
         {
             return Ok(self.prices.clone());
@@ -128,7 +128,7 @@ impl TheDex {
         if let Ok(response) = serde_json::from_str::<Vec<Price>>(&response) {
             let mut locked = self.last_requested.write().await;
             *locked = chrono::Utc::now().timestamp_millis() as u64;
-            self.prices = Rc::new(response);
+            self.prices = response;
             Ok(self.prices.clone())
         } else {
             Err(errors::Error::UnexpectedResponse(response))
