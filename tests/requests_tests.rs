@@ -48,6 +48,7 @@ pub async fn test_create_invoice() {
                 success_url: None,
                 failure_url: None,
                 callback_url: Some("https://game.greekkeepers.io/".into()),
+                unfix_amount: None,
             },
             chrono::Utc::now().timestamp_millis() as u64,
         )
