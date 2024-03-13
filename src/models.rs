@@ -77,8 +77,7 @@ pub struct Invoice {
     pub amount: Decimal,
     #[serde(with = "rust_decimal::serde::str")]
     pub amount_in_pay_currency: Decimal,
-    #[serde(with = "rust_decimal::serde::str")]
-    pub paid_amount: Decimal,
+    pub paid_amount: Option<Decimal>,
     pub pay_url: String,
     pub callback_url: Option<String>,
     pub creation_way: String,
