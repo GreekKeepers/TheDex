@@ -34,6 +34,7 @@ pub struct TheDex {
     last_requested: Arc<RwLock<u64>>,
     //prices: Arc<Vec<models::Price>>,
     currencies: Arc<RwLock<Option<models::Currencies>>>,
+    client: Arc<Client>,
 }
 
 impl TheDex {
@@ -44,6 +45,7 @@ impl TheDex {
             //prices: Arc::new(Vec::with_capacity(0)),
             last_requested: Default::default(),
             currencies: Default::default(),
+            client: Arc::new(Client::new()),
         }
     }
 
@@ -89,9 +91,8 @@ impl TheDex {
 
         let complete_url = format!("{}{}", BASE_URL, path);
 
-        let client = Client::new();
-
-        let res = client
+        let res = self
+            .client
             .post(complete_url)
             .body(serialized_request)
             .header(reqwest::header::CONTENT_TYPE, "application/json")
